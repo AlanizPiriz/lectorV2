@@ -172,11 +172,11 @@
     });
 
     // ---------- Botones ----------
-    document.getElementById('noBtn').addEventListener('click', function() {
-      document.getElementById('searchInput').value = "";
-      document.getElementById('result').style.display = 'none';
-      document.getElementById('searchInput').focus();
-    });
+    // document.getElementById('noBtn').addEventListener('click', function() {
+    //   document.getElementById('searchInput').value = "";
+    //   document.getElementById('result').style.display = 'none';
+    //   document.getElementById('searchInput').focus();
+    // });
 
     let cbosTab; // Variable global
 
