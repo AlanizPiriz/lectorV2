@@ -280,10 +280,11 @@ document.getElementById('downloadTickets').addEventListener('click', function() 
   const a = document.createElement("a");
   a.href = url;
   a.download = `tickets_${fechaFormateada}.txt`;
+  localStorage.removeItem("tickets");
+  ticketsAcumulados = "";
   a.click();
 
   URL.revokeObjectURL(url);
-  localStorage.removeItem("tickets");
 });
 
 // ---------- Borrar ----------
