@@ -275,7 +275,7 @@ document.getElementById('downloadTickets').addEventListener('click', function() 
   const url = URL.createObjectURL(blob);
 
   const fecha = new Date();
-  const fechaFormateada = `${fecha.getDate()}-${(fecha.getMonth() + 1)}-${fecha.getFullYear()}}`;
+  const fechaFormateada = `${fecha.getDate()}-${(fecha.getMonth() + 1)}-${fecha.getFullYear()}`;
 
   const a = document.createElement("a");
   a.href = url;
