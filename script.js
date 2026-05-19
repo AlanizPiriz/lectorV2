@@ -1,7 +1,37 @@
     let data = [];
     let typingTimer;
     let ticketsAcumulados = localStorage.getItem("tickets") || "";
-    
+
+    // ---------- REGISTRO DE CÓDIGOS ALTERNATIVOS ----------
+    // Ahora tiene tus datos de prueba. En el futuro, si hay un archivo .json en GitHub, se cargará encima automáticamente.
+    let alternativosData = [
+      { "posCode": "006764", "Cod. Barras": "7730205108531" },
+      { "posCode": "006765", "Cod. Barras": "7730205043177" },
+      { "posCode": "006736", "Cod. Barras": "8410791501501" },
+      { "posCode": "006737", "Cod. Barras": "8410791501518" },
+      { "posCode": "006759", "Cod. Barras": "7730205043160" },
+      { "posCode": "006738", "Cod. Barras": "8410791501525" },
+      { "posCode": "006739", "Cod. Barras": "8410791501532" },
+      { "posCode": "015458", "Cod. Barras": "7730205065940" }
+    ];
+
+    // Función que buscará el archivo grande en GitHub en el futuro
+    async function cargarAlternativosDesdeGitHub() {
+      try {
+        const response = await fetch('./alternativos.json');
+        if (response.ok) {
+          const datosArchivo = await response.json();
+          if (datosArchivo && datosArchivo.length > 0) {
+            alternativosData = datosArchivo; // Reemplaza los de prueba por los miles del archivo
+            console.log(`🌐 ¡Éxito! Se cargaron ${alternativosData.length} códigos alternativos desde el archivo de GitHub.`);
+          }
+        } else {
+          console.log("ℹ️ No se detectó un archivo 'alternativos.json' en GitHub. Usando los códigos cargados a mano.");
+        }
+      } catch (error) {
+        console.log("ℹ️ Modo manual activo (No se encontró o no se pudo leer alternativos.json aún).");
+      }
+    }
 
     // ---------- IndexedDB Helpers ----------
     const dbName = "ExcelDB";
@@ -49,7 +79,7 @@
       }
     }
 
-    // ---------- Cargar datos guardados ----------
+    // ---------- Cargar datos guardados al iniciar la app ----------
     window.addEventListener('load', async () => {
       const storedData = await loadDataFromIndexedDB();
       if (storedData) {
@@ -59,6 +89,9 @@
         console.log("Datos restaurados desde IndexedDB ✅");
       }
       showFileInfo();
+
+      // Intenta buscar el archivo grande en GitHub de forma automática
+      await cargarAlternativosDesdeGitHub();
     });
 
     // ---------- Cargar archivo Excel ----------
@@ -108,49 +141,98 @@
     });
 
     // ---------- Buscar producto ----------
+        // ---------- Buscar producto (CON PUENTE CORREGIDO A COLUMNA 'CÓDIGO') ----------
     document.getElementById('searchBtn').addEventListener('click', function() {
       const term = document.getElementById('searchInput').value.trim().toLowerCase();
       if (!term) return;
 
       const resultDiv = document.getElementById('result');
       const infoDiv = document.getElementById('productInfo');
-      const found = data.find(row =>
+      
+      const normalize = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      // 1. PASO A: Búsqueda directa en el Excel Principal cargado
+      let found = data.find(row =>
         Object.values(row).some(val => String(val).toLowerCase().includes(term))
       );
 
-      	if (found) {
-  	// Convertimos el objeto en un array de [key, value]
-    window.ultimoProducto = found;
+      let esAlternativo = false;
 
-    const normalize = str =>
-    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
-  	const entries = Object.entries(found);
+      // 2. PASO B: Si NO se encuentra, buscamos en los alternativos descargados de GitHub
+      if (!found && typeof alternativosData !== 'undefined' && alternativosData.length > 0) {
+        console.log("No encontrado directo. Buscando en códigos alternativos...");
+        
+        // Buscamos si coincide con la columna "Cod. Barras" del JSON alternativo
+        const altMatch = alternativosData.find(row => {
+          const barra = row["Cod. Barras"] ? String(row["Cod. Barras"]).trim().toLowerCase() : "";
+          return barra === term || barra.includes(term);
+        });
 
-  	// Separamos el PVP del resto
-  	const pvpEntry = entries.find(([key]) => normalize(key) === 'pvp');
- 	const articuloEntry = entries.find(([key]) => normalize(key) === 'articulo');
+        // 3. PASO C: Si hallamos la barra alternativa, extraemos su "posCode"
+        if (altMatch) {
+          const codigoPosOriginal = altMatch["posCode"] ? String(altMatch["posCode"]).trim().toLowerCase() : "";
+          
+          if (codigoPosOriginal) {
+            console.log(`¡Código alternativo asociado a posCode: ${codigoPosOriginal}! Buscando en principal...`);
+            
+            // 4. PASO D: Volvemos al Excel Principal a buscar el producto usando la columna exacta 'Código'
+            found = data.find(row => {
+              // Obtenemos el valor de la columna 'Código' del Excel Principal (manejando posibles diferencias de tildes o mayúsculas)
+              const valorCodigoPrincipal = row["Código"] || row["Codigo"] || row["CÓDIGO"];
+              if (!valorCodigoPrincipal) return false;
 
-  	// Armamos el HTML
-  	let html = '';
+              const cleanPrincipal = String(valorCodigoPrincipal).trim().toLowerCase().replace(/^0+/, '');
+              const cleanTarget = codigoPosOriginal.replace(/^0+/, '');
+              
+              // Compara los códigos de forma estricta o limpiando los ceros iniciales
+              return String(valorCodigoPrincipal).trim().toLowerCase() === codigoPosOriginal || cleanPrincipal === cleanTarget;
+            });
+            
+            if (found) {
+              esAlternativo = true; // Marcamos que hizo puente con éxito
+            }
+          }
+        }
+      }
 
-    // Mostrar Articulo primero (normal)
-    if (articuloEntry) {
-      const[key, value] = articuloEntry;
-      html+= `<b>${key}:</b> ${value}<br>`;
-    }
+      // 5. Renderizado final del resultado (Tu lógica de negocio y UI original)
+      if (found) {
+        window.ultimoProducto = found;
+        const entries = Object.entries(found);
 
-  	// Primero el PVP en rojo (si existe)
-  	if (pvpEntry) {
-    	const [key, value] = pvpEntry;
-    	html += `<b style="color:red;">${key}:</b> <span style="color:red;">${value}</span><br>`;
-  	}
+        // Separamos el PVP del resto
+        const pvpEntry = entries.find(([key]) => normalize(key) === 'pvp');
+        // Buscamos la columna 'Artículo' según tu nueva captura de pantalla
+        const articuloEntry = entries.find(([key]) => normalize(key) === 'articulo' || normalize(key) === 'articulo');
 
+        let html = '';
 
-  	// Asignamos al contenedor
-  	infoDiv.innerHTML = html;
+        // Aviso visual en pantalla si el producto se detectó mediante el puente
+        if (esAlternativo) {
+          html += `<div style="background:#FFF3CD; color:#856404; padding:6px; border-radius:4px; margin-bottom:8px; font-size:0.85rem; font-weight:bold; border:1px solid #FFEEBA;">🔄 Producto por Código Alternativo</div>`;
+        }
+
+        // Mostrar Artículo primero (usando la clave real encontrada en el Excel)
+        if (articuloEntry) {
+          const [key, value] = articuloEntry;
+          html += `<b>${key}:</b> ${value}<br>`;
+        } else {
+          // En caso de que no encuentre la key normalizada, buscamos la propiedad exacta 'Artículo' de tu Excel
+          const nombreArticulo = found["Artículo"] || found["Articulo"];
+          if (nombreArticulo) {
+            html += `<b>Artículo:</b> ${nombreArticulo}<br>`;
+          }
+        }
+
+        // Primero el PVP en rojo (si existe)
+        if (pvpEntry) {
+          const [key, value] = pvpEntry;
+          html += `<b style="color:red;">${key}:</b> <span style="color:red;">${value}</span><br>`;
+        }
+
+        // Asignamos al contenedor y mostramos
+        infoDiv.innerHTML = html;
         resultDiv.style.display = 'block';
-
 
         // ✅ Limpiar input y volver a enfocar automáticamente
         document.getElementById('searchInput').value = "";
@@ -159,16 +241,17 @@
       } else {
         resultDiv.style.display = 'none';
         alert("Producto no encontrado ❌");
-        //document.getElementById('searchInput').focus();
         document.getElementById('searchInput').value = "";
         setTimeout(() => document.getElementById('searchInput').focus(), 300);
       }
+
+      // Animación de scroll hacia abajo original
       setTimeout(() => {
         window.scrollTo({
             top: document.body.scrollHeight,
             behavior: 'smooth'
         });
-    }, 100);
+      }, 100);
     });
 
     // ---------- Botones ----------
