@@ -6,13 +6,13 @@
     // Forzamos a que posCode sea un texto puro envolviendo los números entre comillas ""
     let alternativosData = [
       { "posCode": "02006764", "Cod. Barras": "7730205108531" },
-      { "posCode": "006765", "Cod. Barras": "7730205043177" },
-      { "posCode": "006736", "Cod. Barras": "8410791501501" },
-      { "posCode": "006737", "Cod. Barras": "8410791501518" },
-      { "posCode": "006759", "Cod. Barras": "7730205043160" },
-      { "posCode": "006738", "Cod. Barras": "8410791501525" },
-      { "posCode": "006739", "Cod. Barras": "8410791501532" },
-      { "posCode": "015458", "Cod. Barras": "7730205065940" }
+      { "posCode": "02006765", "Cod. Barras": "7730205043177" },
+      { "posCode": "02006736", "Cod. Barras": "8410791501501" },
+      { "posCode": "02006737", "Cod. Barras": "8410791501518" },
+      { "posCode": "02006759", "Cod. Barras": "7730205043160" },
+      { "posCode": "02006738", "Cod. Barras": "8410791501525" },
+      { "posCode": "02006739", "Cod. Barras": "8410791501532" },
+      { "posCode": "02015458", "Cod. Barras": "7730205065940" }
     ];
 
 
