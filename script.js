@@ -5,7 +5,7 @@
         // ---------- TUS CÓDIGOS ALTERNATIVOS CARGADOS A MANO (CORREGIDO) ----------
     // Forzamos a que posCode sea un texto puro envolviendo los números entre comillas ""
     let alternativosData = [
-      { "posCode": "006764", "Cod. Barras": "7730205108531" },
+      { "posCode": "02006764", "Cod. Barras": "7730205108531" },
       { "posCode": "006765", "Cod. Barras": "7730205043177" },
       { "posCode": "006736", "Cod. Barras": "8410791501501" },
       { "posCode": "006737", "Cod. Barras": "8410791501518" },
@@ -191,6 +191,7 @@
             
             if (found) {
               esAlternativo = true; // Marcamos que hizo puente con éxito
+              console.log("puente ok")
             }
           }
         }
@@ -205,7 +206,7 @@
         const pvpEntry = entries.find(([key]) => normalize(key) === 'pvp');
         // Buscamos la columna 'Artículo' según tu nueva captura de pantalla
         const articuloEntry = entries.find(([key]) => normalize(key) === 'articulo' || normalize(key) === 'articulo');
-
+        
         let html = '';
 
         // Aviso visual en pantalla si el producto se detectó mediante el puente
