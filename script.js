@@ -2,8 +2,8 @@
     let typingTimer;
     let ticketsAcumulados = localStorage.getItem("tickets") || "";
 
-    // ---------- REGISTRO DE CÓDIGOS ALTERNATIVOS ----------
-    // Ahora tiene tus datos de prueba. En el futuro, si hay un archivo .json en GitHub, se cargará encima automáticamente.
+        // ---------- TUS CÓDIGOS ALTERNATIVOS CARGADOS A MANO (CORREGIDO) ----------
+    // Forzamos a que posCode sea un texto puro envolviendo los números entre comillas ""
     let alternativosData = [
       { "posCode": "006764", "Cod. Barras": "7730205108531" },
       { "posCode": "006765", "Cod. Barras": "7730205043177" },
@@ -14,6 +14,7 @@
       { "posCode": "006739", "Cod. Barras": "8410791501532" },
       { "posCode": "015458", "Cod. Barras": "7730205065940" }
     ];
+
 
     // Función que buscará el archivo grande en GitHub en el futuro
     async function cargarAlternativosDesdeGitHub() {
