@@ -240,7 +240,7 @@
 
       } else {
         resultDiv.style.display = 'none';
-        //alert("Producto no encontrado ❌");
+        alert("Producto no encontrado ❌");
         document.getElementById('searchInput').value = "";
         setTimeout(() => document.getElementById('searchInput').focus(), 300);
       }
