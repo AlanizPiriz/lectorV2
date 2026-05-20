@@ -144,56 +144,56 @@
     // ---------- Buscar producto ----------
         // ---------- Buscar producto (CON PUENTE CORREGIDO A COLUMNA 'CÓDIGO') ----------
     document.getElementById('searchBtn').addEventListener('click', function() {
-      const term = document.getElementById('searchInput').value.trim().toLowerCase();
-      if (!term) return;
+  const term = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!term) return;
 
-      const resultDiv = document.getElementById('result');
-      const infoDiv = document.getElementById('productInfo');
-      
-      const normalize = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-      // 1. PASO A: Búsqueda directa en el Excel Principal cargado
-      let found = data.find(row =>
-        Object.values(row).some(val => String(val).toLowerCase().includes(term))
-      );
-
-      let esAlternativo = false;
-
-      // 2. PASO B: Si NO se encuentra, buscamos en los alternativos descargados de GitHub
-      if (!found && typeof alternativosData !== 'undefined' && alternativosData.length > 0) {
-        console.log("No encontrado directo. Buscando en códigos alternativos...");
-        
-        // Buscamos si coincide con la columna "Cod. Barras" del JSON alternativo
-        const altMatch = alternativosData.find(row => {
-          const barra = row["Cod. Barras"] ? String(row["Cod. Barras"]).trim().toLowerCase() : "";
-          return barra === term || barra.includes(term);
-        });
-
-        // 3. PASO C: Si hallamos la barra alternativa, extraemos su "posCode"
-        if (altMatch) {
-          const codigoPosOriginal = altMatch["posCode"] ? String(altMatch["posCode"]).trim().toLowerCase() : "";
-          
-            if (codigoPosOriginal) {
-              const codigoPosConPrefijo = "02" + codigoPosOriginal;
-              console.log(`¡Código alternativo con prefijo: ${codigoPosConPrefijo}! Buscando en principal...`);
+  const resultDiv = document.getElementById('result');
+  const infoDiv = document.getElementById('productInfo');
   
-              found = data.find(row => {
-                const valorCodigoPrincipal = row["Código"] || row["Codigo"] || row["CÓDIGO"];
-                if (!valorCodigoPrincipal) return false;
-                const cleanPrincipal = String(valorCodigoPrincipal).trim().toLowerCase().replace(/^0+/, '');
-                const cleanTarget = codigoPosConPrefijo.replace(/^0+/, '');  // ← cambiado
+  const normalize = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // 1. PASO A: Búsqueda directa en el Excel Principal (Coincidencia exacta corregida)
+  let found = data.find(row =>
+    Object.values(row).some(val => String(val).trim().toLowerCase() === term)
+  );
+
+  let esAlternativo = false;
+
+  // 2. PASO B: Si NO se encuentra, buscamos en los alternativos
+  if (!found && typeof alternativosData !== 'undefined' && alternativosData.length > 0) {
+    console.log("No encontrado directo. Buscando en códigos alternativos...");
     
-                return String(valorCodigoPrincipal).trim().toLowerCase() === codigoPosConPrefijo  // ← cambiado
-                || cleanPrincipal === cleanTarget;
-            });
-            
-            if (found) {
-              esAlternativo = true; // Marcamos que hizo puente con éxito
-              console.log("puente ok")
-            }
-          }
+    // CORREGIDO: Eliminamos .includes() para evitar falsos positivos con números cortos
+    const altMatch = alternativosData.find(row => {
+      const barra = row["Cod. Barras"] ? String(row["Cod. Barras"]).trim().toLowerCase() : "";
+      return barra === term; 
+    });
+
+    // 3. PASO C: Si hallamos la barra alternativa, extraemos su "posCode"
+    if (altMatch) {
+      const codigoPosOriginal = altMatch["posCode"] ? String(altMatch["posCode"]).trim().toLowerCase() : "";
+      
+      if (codigoPosOriginal) {
+        const codigoPosConPrefijo = "02" + codigoPosOriginal;
+        console.log(`¡Código alternativo con prefijo: ${codigoPosConPrefijo}! Buscando en principal...`);
+
+        found = data.find(row => {
+          const valorCodigoPrincipal = row["Código"] || row["Codigo"] || row["CÓDIGO"];
+          if (!valorCodigoPrincipal) return false;
+          
+          const cleanPrincipal = String(valorCodigoPrincipal).trim().toLowerCase().replace(/^0+/, '');
+          const cleanTarget = codigoPosConPrefijo.replace(/^0+/, '');
+
+          return String(valorCodigoPrincipal).trim().toLowerCase() === codigoPosConPrefijo || cleanPrincipal === cleanTarget;
+        });
+        
+        if (found) {
+          esAlternativo = true; // Marcamos que hizo puente con éxito
+          console.log("puente ok");
         }
       }
+    }
+  }
 
       // 5. Renderizado final del resultado (Tu lógica de negocio y UI original)
       if (found) {
