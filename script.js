@@ -5,14 +5,14 @@
         // ---------- TUS CÓDIGOS ALTERNATIVOS CARGADOS A MANO (CORREGIDO) ----------
     // Forzamos a que posCode sea un texto puro envolviendo los números entre comillas ""
     let alternativosData = [
-      { "posCode": "02006764", "Cod. Barras": "7730205108531" },
-      { "posCode": "02006765", "Cod. Barras": "7730205043177" },
-      { "posCode": "02006736", "Cod. Barras": "8410791501501" },
-      { "posCode": "02006737", "Cod. Barras": "8410791501518" },
-      { "posCode": "02006759", "Cod. Barras": "7730205043160" },
-      { "posCode": "02006738", "Cod. Barras": "8410791501525" },
-      { "posCode": "02006739", "Cod. Barras": "8410791501532" },
-      { "posCode": "02015458", "Cod. Barras": "7730205065940" }
+      { "posCode": "006764", "Cod. Barras": "7730205108531" },
+      { "posCode": "006765", "Cod. Barras": "7730205043177" },
+      { "posCode": "006736", "Cod. Barras": "8410791501501" },
+      { "posCode": "006737", "Cod. Barras": "8410791501518" },
+      { "posCode": "006759", "Cod. Barras": "7730205043160" },
+      { "posCode": "006738", "Cod. Barras": "8410791501525" },
+      { "posCode": "006739", "Cod. Barras": "8410791501532" },
+      { "posCode": "015458", "Cod. Barras": "7730205065940" }
     ];
 
 
@@ -173,20 +173,18 @@
         if (altMatch) {
           const codigoPosOriginal = altMatch["posCode"] ? String(altMatch["posCode"]).trim().toLowerCase() : "";
           
-          if (codigoPosOriginal) {
-            console.log(`¡Código alternativo asociado a posCode: ${codigoPosOriginal}! Buscando en principal...`);
-            
-            // 4. PASO D: Volvemos al Excel Principal a buscar el producto usando la columna exacta 'Código'
-            found = data.find(row => {
-              // Obtenemos el valor de la columna 'Código' del Excel Principal (manejando posibles diferencias de tildes o mayúsculas)
-              const valorCodigoPrincipal = row["Código"] || row["Codigo"] || row["CÓDIGO"];
-              if (!valorCodigoPrincipal) return false;
-
-              const cleanPrincipal = String(valorCodigoPrincipal).trim().toLowerCase().replace(/^0+/, '');
-              const cleanTarget = codigoPosOriginal.replace(/^0+/, '');
-              
-              // Compara los códigos de forma estricta o limpiando los ceros iniciales
-              return String(valorCodigoPrincipal).trim().toLowerCase() === codigoPosOriginal || cleanPrincipal === cleanTarget;
+            if (codigoPosOriginal) {
+              const codigoPosConPrefijo = "02" + codigoPosOriginal;
+              console.log(`¡Código alternativo con prefijo: ${codigoPosConPrefijo}! Buscando en principal...`);
+  
+              found = data.find(row => {
+                const valorCodigoPrincipal = row["Código"] || row["Codigo"] || row["CÓDIGO"];
+                if (!valorCodigoPrincipal) return false;
+                const cleanPrincipal = String(valorCodigoPrincipal).trim().toLowerCase().replace(/^0+/, '');
+                const cleanTarget = codigoPosConPrefijo.replace(/^0+/, '');  // ← cambiado
+    
+                return String(valorCodigoPrincipal).trim().toLowerCase() === codigoPosConPrefijo  // ← cambiado
+                || cleanPrincipal === cleanTarget;
             });
             
             if (found) {
