@@ -19,7 +19,7 @@
     // Función que buscará el archivo grande en GitHub en el futuro
     async function cargarAlternativosDesdeGitHub() {
       try {
-        const response = await fetch('./alternativos.json');
+        const response = await fetch('Alternativos.json');
         if (response.ok) {
           const datosArchivo = await response.json();
           if (datosArchivo && datosArchivo.length > 0) {
