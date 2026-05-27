@@ -1,20 +1,100 @@
-    let data = [];
-    let typingTimer;
-    let ticketsAcumulados = localStorage.getItem("tickets") || "";
 
-        // ---------- TUS CÓDIGOS ALTERNATIVOS CARGADOS A MANO (CORREGIDO) ----------
-    // Forzamos a que posCode sea un texto puro envolviendo los números entre comillas ""
-    let alternativosData = [
-      { "posCode": "006764", "Cod. Barras": "7730205108531" },
-      { "posCode": "006765", "Cod. Barras": "7730205043177" },
-      { "posCode": "006736", "Cod. Barras": "8410791501501" },
-      { "posCode": "006737", "Cod. Barras": "8410791501518" },
-      { "posCode": "006759", "Cod. Barras": "7730205043160" },
-      { "posCode": "006738", "Cod. Barras": "8410791501525" },
-      { "posCode": "006739", "Cod. Barras": "8410791501532" },
-      { "posCode": "015458", "Cod. Barras": "7730205065940" }
-    ];
+let data = [];
+let typingTimer;
+let ticketsAcumulados = localStorage.getItem("tickets") || "";
 
+
+// ---------- DATOS ALTERNATIVOS ----------
+let alternativosData = [
+  { "posCode": "006764", "Cod. Barras": "7730205108531" },
+  { "posCode": "006765", "Cod. Barras": "7730205043177" },
+  { "posCode": "006736", "Cod. Barras": "8410791501501" },
+  { "posCode": "006737", "Cod. Barras": "8410791501518" },
+  { "posCode": "006759", "Cod. Barras": "7730205043160" },
+  { "posCode": "006738", "Cod. Barras": "8410791501525" },
+  { "posCode": "006739", "Cod. Barras": "8410791501532" },
+  { "posCode": "015458", "Cod. Barras": "7730205065940" }
+];
+
+function requireLogin() {
+  const storeId = localStorage.getItem("storeId");
+
+  if (!storeId) {
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("app").style.display = "none";
+    return null;
+  }
+
+  return storeId;
+}
+
+const API_URL = "http://localhost:3000";
+
+// ---------- SOCKET (UNO SOLO) ----------
+const socket = io(API_URL);
+
+// ---------- CONECTAR SOCKET ----------
+function conectarSocket(storeId) {
+
+  if (!storeId) return;
+
+  socket.off("print");
+
+  socket.emit("register", {
+    storeId
+  });
+
+  socket.on("print", (data) => {
+    console.log("Confirmación de impresión recibida");
+    mostrarToast("Imprimiendo... 🖨️");
+});
+}
+
+// ---------- LOGIN ----------
+document.getElementById("loginBtn").addEventListener("click", async () => {
+
+  const user = document.getElementById("user").value;
+  const password = document.getElementById("pass").value;
+
+  const res = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ user, password })
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    document.getElementById("error").innerText = "Login incorrecto";
+    return;
+  }
+
+  // guardar tienda
+  localStorage.setItem("storeId", data.storeId);
+
+  // UI
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  // socket
+  conectarSocket(data.storeId);
+});
+
+// ---------- AUTO LOGIN ----------
+window.addEventListener("load", () => {
+
+  const storeId = requireLogin();
+
+  if (storeId) {
+
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("app").style.display = "block";
+
+    conectarSocket(storeId);
+  }
+});
 
     // Función que buscará el archivo grande en GitHub en el futuro
     async function cargarAlternativosDesdeGitHub() {
@@ -240,7 +320,7 @@
 
       } else {
         resultDiv.style.display = 'none';
-        alert("Producto no encontrado ❌");
+        mostrarToast("Producto no encontrado ❌");
         document.getElementById('searchInput').value = "";
         setTimeout(() => document.getElementById('searchInput').focus(), 300);
       }
@@ -291,12 +371,21 @@ function formatearNombre(nombre) {
 }
 
 function generarEtiqueta(producto) {
-  const nombre = formatearNombre(producto["Artículo"]);
-  const precio = producto["PVP"] || "";
-  const codigo = String(producto["Cód. barras ppal."] || "").replace(/\D/g, "");
+  const nombre =
+    formatearNombre(
+      producto["Artículo"]
+    );
 
-  return `
-n
+  const precio =
+    producto["PVP"] || "";
+
+  const codigo = String(
+    producto[
+      "Cód. barras ppal."
+    ] || ""
+  ).replace(/\D/g, "");
+
+  return `n
 L
 H30
 PE
@@ -313,68 +402,240 @@ E
 
 // ---------- Agregar ticket ----------
 function agregarTicket(producto) {
-    const ticket = generarEtiqueta(producto);
-    
-    // Actualizamos la variable global y el storage
-    ticketsAcumulados += ticket;
-    localStorage.setItem("tickets", ticketsAcumulados);
+  const ticket = generarEtiqueta(producto);
 
-    // Notificación visual rápida (Toast)
-    mostrarToast("Ticket agregado ✅");
+  ticketsAcumulados += ticket;
 
-    // En PDA, limpiar el valor antes del focus asegura que el siguiente escaneo sea limpio
-    const input = document.getElementById('searchInput');
-    input.value = ''; 
-    input.focus();
+  localStorage.setItem(
+    "tickets",
+    ticketsAcumulados
+  );
+  actualizarContador();
+  mostrarToast("Ticket agregado ✅");
+
+  const input =
+    document.getElementById(
+      "searchInput"
+    );
+
+  input.value = "";
+  input.focus();
 }
 
 function mostrarToast(mensaje) {
-    const toast = document.getElementById("toast");
-    toast.innerText = mensaje;
-    toast.style.visibility = "visible";
-    
-    setTimeout(() => { 
-        toast.style.visibility = "hidden"; 
-    }, 1500); // 1.5 segundos es ideal para no saturar al operario
+
+  const toast =
+    document.getElementById(
+      "toast"
+    );
+
+  toast.innerText = mensaje;
+
+  toast.style.visibility =
+    "visible";
+
+  setTimeout(() => {
+
+    toast.style.visibility =
+      "hidden";
+
+  }, 1500);
 }
 
+document
+  .getElementById("yesBtn")
+  .addEventListener(
+    "click",
+    function () {
 
-document.getElementById('yesBtn').addEventListener('click', function() {
-  if (window.ultimoProducto) {
-    agregarTicket(window.ultimoProducto);
-  } else {
-    alert("No hay producto ❌");
-  }
-});
+      if (
+        window.ultimoProducto
+      ) {
 
-// ---------- Descargar ----------
-document.getElementById('downloadTickets').addEventListener('click', function() {
-  if (!ticketsAcumulados.trim()) {
-    alert("No hay tickets ❌");
+        agregarTicket(
+          window.ultimoProducto
+        );
+
+      } else {
+
+        mostrarToast(
+          "No hay producto ❌"
+        );
+      }
+    }
+  );
+
+// ---------- IMPRIMIR ----------
+document
+  .getElementById(
+    "downloadTickets"
+  )
+  .addEventListener(
+    "click",
+    imprimirTickets
+  );
+
+  document
+  .getElementById(
+    "reprintBtn"
+  )
+  .addEventListener(
+    "click",
+    reimprimirUltima
+  );
+
+async function imprimirTickets() {
+
+  if (
+    !ticketsAcumulados.trim()
+  ) {
+
+    mostrarToast(
+      "No hay tickets ❌"
+    );
+
     return;
   }
 
-  const blob = new Blob([ticketsAcumulados], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
+  const storeId = localStorage.getItem("storeId");
+  const payload = {
+    storeId: storeId,  // ← usar ese, no "tienda-1"
+    tickets: ticketsAcumulados
+  };
 
-  const fecha = new Date();
-  const fechaFormateada = `${fecha.getDate()}-${(fecha.getMonth() + 1)}-${fecha.getFullYear()}`;
+  try {
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `tickets_${fechaFormateada}.txt`;
-  localStorage.removeItem("tickets");
-  ticketsAcumulados = "";
-  a.click();
+    const response =
+      await fetch(
+        `${API_URL}/print`,
+        {
+          method: "POST",
 
-  URL.revokeObjectURL(url);
-});
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(
+              payload
+            )
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.ok) {
+
+      // guardar última impresión
+      localStorage.setItem(
+        "ultimaImpresion",
+        JSON.stringify(
+          payload
+        )
+      );
+
+      mostrarToast(
+        "Impresión enviada ✅"
+      );
+
+      // limpiar cola actual
+      ticketsAcumulados =
+        "";
+
+      localStorage.removeItem(
+        "tickets"
+      );
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    mostrarToast(
+      "Error enviando impresión ❌"
+    );
+  }
+  actualizarContador();
+}
+
+// ---------- REIMPRIMIR ----------
+async function reimprimirUltima() {
+
+  const ultima =
+    localStorage.getItem(
+      "ultimaImpresion"
+    );
+
+  if (!ultima) {
+
+    mostrarToast(
+      "No hay impresión guardada ❌"
+    );
+
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_URL}/print`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: ultima
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.ok) {
+
+      mostrarToast(
+        "Reimpresión enviada ✅"
+      );
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    mostrarToast(
+      "No se pudo reimprimir ❌"
+    );
+  }
+}
+
 
 // ---------- Borrar ----------
 document.getElementById('clearTickets').addEventListener('click', function() {
   if (confirm("¿Borrar todos los tickets?")) {
     ticketsAcumulados = "";
     localStorage.removeItem("tickets");
-    alert("Borrado ✅");
+    actualizarContador();
+    mostrarToast("Borrado ✅");
   }
 });
+
+function actualizarContador() {
+
+  const cantidad =
+    ticketsAcumulados
+      .split("Q1")
+      .length - 1;
+
+  document.getElementById(
+    "ticketCount"
+  ).innerText =
+    `🖨️ Etiquetas para imprimir: ${cantidad}`;
+}
+
+

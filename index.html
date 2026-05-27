@@ -5,45 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buscador de Productos (PDA)</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <h2>📦 Buscador de Productos PDA</h2> 
-  
-
-  <a href="readme.html" target="_blank">
-    <button type="button" id="funciono">¿Como funciono?</button>
-  </a>
-
-  <label for="excelFile" class="boton-personalizado">
-      Seleccionar Excel
-  </label>
-  
-  <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display: none;"><br>
-  <label>Buscar por código o nombre:</label>
-  <input type="text" id="searchInput" placeholder=" Escaneá o escribí..." disabled autofocus>
-  <button id="searchBtn" disabled>Buscar</button>
-
-  <div id="fileInfo"></div>
-
-  <div id="result">
-    <h3>Resultado:</h3>
-    <div id="productInfo"></div>
-    <div class="botones">
-      <button id="yesBtn">Agregar etiqueta ✅</button>
-      <!-- <button id="noBtn">No ❌</button> -->
-      <br>
-      <button id="downloadTickets">Descargar tickets</button>
-      <button id="clearTickets">Borrar tickets</button>
-    </div>
+  <!-- LOGIN (visible por defecto) -->
+  <div id="loginBox">
+    <h2>Login tienda</h2>
+    <input id="user" placeholder="Usuario (tienda)" />
+    <input id="pass" type="password" placeholder="Contraseña" />
+    <button id="loginBtn">Entrar</button>
+    <p id="error"></p>
   </div>
 
-  <div id="toast" style="visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 16px; position: fixed; z-index: 1; left: 50%; bottom: 30px; transform: translateX(-50%);"></div>
+  <!-- APP (oculta hasta hacer login) -->
+  <div id="app" style="display:none;">
 
+    <h2>📦 Buscador de Productos PDA</h2>
+
+    <a href="readme.html" target="_blank">
+      <button type="button" id="funciono">¿Cómo funciono?</button>
+    </a>
+
+    <label for="excelFile" class="boton-personalizado">
+      Seleccionar Excel
+    </label>
+    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display:none;">
+
+    <br>
+
+    <label>Buscar por código o nombre:</label>
+    <input type="text" id="searchInput" placeholder="Escaneá o escribí..." disabled autofocus>
+    <button id="searchBtn" disabled>Buscar</button>
+
+    <div id="fileInfo"></div>
+
+    <br>
+
+    <span id="ticketCount">🖨️ Etiquetas para imprimir: 0</span>
+
+    <div id="result" style="display:none;">
+      <h3>Resultado:</h3>
+      <div id="productInfo"></div>
+      <div class="botones">
+        <button id="yesBtn">Agregar etiqueta ✅</button>
+        <br>
+        <button id="downloadTickets">Imprimir tickets</button>
+        <button id="reprintBtn">Reimprimir última</button>
+        <button id="clearTickets">Borrar tickets</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" style="visibility:hidden; min-width:250px; background-color:#333; color:#fff; text-align:center; border-radius:5px; padding:16px; position:fixed; z-index:1; left:50%; bottom:30px; transform:translateX(-50%);"></div>
+
+  <script src="script.js"></script>
 
 </body>
-<script src="script.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </html>
-
