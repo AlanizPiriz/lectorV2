@@ -28,7 +28,7 @@ function requireLogin() {
   return storeId;
 }
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://pda-backend-2o8s.onrender.com";
 
 // ---------- SOCKET (UNO SOLO) ----------
 const socket = io(API_URL);
